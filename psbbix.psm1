@@ -2399,14 +2399,14 @@ Function New-ZabbixHttpTest {
 		[Parameter(ValueFromPipelineByPropertyName=$true)][array]$StatusCodes=200,
 		[Parameter(ValueFromPipelineByPropertyName=$true)]$Timeout=15,
 		[Parameter(ValueFromPipelineByPropertyName=$true)]$delay,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$retries,
+		#[Parameter(ValueFromPipelineByPropertyName=$true)]$retries,
 		[Parameter(ValueFromPipelineByPropertyName=$true)]$status,
 		[Parameter(ValueFromPipelineByPropertyName=$true)]$Steps,
 		[Parameter(ValueFromPipelineByPropertyName=$true)]$applicationid,
-		[Parameter(ValueFromPipelineByPropertyName=$true)]$TemplateID,
+		#[Parameter(ValueFromPipelineByPropertyName=$true)]$TemplateID,
 		$HttpTestStepName,
 		[Parameter(Mandatory=$True)]$HttpTestName,
-		#[Parameter(Mandatory=$True)]$HttpTestStepURL,
+		[Parameter(Mandatory=$True)]$HttpTestStepURL,
 		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$jsonrpc=($global:zabSessionParams.jsonrpc),
         [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$session=($global:zabSessionParams.session),
         [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][string]$id=($global:zabSessionParams.id),
@@ -2426,8 +2426,7 @@ Function New-ZabbixHttpTest {
 				method = "httptest.create"
 				params = @{
 					name = $HttpTestName
-					hostid = $HostID
-					templateid = $TemplateID
+					hostid = $HostID					
 					applicationid = $applicationid
 					status = $status
 					steps = $steps
@@ -2443,12 +2442,10 @@ Function New-ZabbixHttpTest {
 				method = "httptest.create"
 				params = @{
 					name = $HttpTestName
-					hostid = $HostID
-					templateid = $TemplateID
-					applicationid = $applicationid
+					hostid = $HostID					
+					#applicationid = $applicationid
 					status = $status
-					delay = $delay
-					retries = $retries
+					delay = $delay					
 					steps = @(
 						@{
 							name = $HttpTestStepName
@@ -2457,6 +2454,7 @@ Function New-ZabbixHttpTest {
 							required = $HttpTestStepRequired
 							follow_redirects = 1
 							timeout = $Timeout
+							no = 1
 						}
 					) 
 				}

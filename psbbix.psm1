@@ -161,9 +161,9 @@ Function New-ZabbixSession {
 
     $BodyJSON = ConvertTo-Json $Body
 	write-verbose $BodyJSON
-	if ($PSVersionTable.PSEdition -ne "core") {
-		if (!(test-connection $IPAddress -Quiet -Count 1)) {write-host "$IPAddress is not available.`n" -f red; return}
-	}
+	#if ($PSVersionTable.PSEdition -ne "core") {
+	#	if (!(test-connection $IPAddress -Quiet -Count 1)) {write-host "$IPAddress is not available.`n" -f red; return}
+	#}
     
 	if ($noSSL) {
 		write-warning "You're going to connect via insecure HTTP protocol. Consider to use HTTPS."
@@ -177,7 +177,8 @@ Function New-ZabbixSession {
 	}
 	
     # $URL = $Protocol+"://$IPAddress/zabbix"
-    $URL = $Protocol+"://$IPAddress/$URLCustomPath"
+	$URL = $Protocol+"://$IPAddress/$URLCustomPath"
+	Write-Verbose $URL
     try {
 		if (!$global:zabSession -or !$global:zabSession.session) {
 		$global:zabSession=Invoke-RestMethod ("$URL/api_jsonrpc.php") -ContentType "application/json" -Body $BodyJSON -Method Post |
@@ -3119,6 +3120,7 @@ Function New-ZabbixTrigger {
         [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$TriggerDescription,
         [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$TriggerExpression,
 		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$status,
+		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)]$priority,
 		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$TemplateID,
         [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$triggertags,
 		[Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$true)][array]$dependencies,
@@ -3138,24 +3140,45 @@ Function New-ZabbixTrigger {
 
 		write-verbose ("dependencies: " + $dependencies.length)
 
-		for ($i=0; $i -lt $dependencies.length; $i++) {[array]$depnds+=$(@{triggerid = $($dependencies[$i])})}
+        $depnds = $null
 
-		$Body = @{
-			method = "trigger.create"
-			params = @{
-				description = $TriggerDescription
-				expression = $TriggerExpression
-				# triggerid = $TriggerID
-				status = $status
-				dependencies = @($depnds)
-			}
-			
-			jsonrpc = $jsonrpc
-			id = $id
-			auth = $session
+		for ($i=0; $i -lt $dependencies.length; $i++) {
+			[array]$depnds+=(@{triggerid = $($dependencies[$i].triggerid)})
 		}
 		
-		$BodyJSON = ConvertTo-Json $Body
+		if ($null -eq $dependencies){
+			$Body = @{
+				method = "trigger.create"			
+				params = @{
+					description = $TriggerDescription
+					expression = $TriggerExpression
+					priority = $priority					
+					status = $status					
+				}			
+				
+				jsonrpc = $jsonrpc
+				id = $id
+				auth = $session
+			}
+		} else {
+			$Body = @{
+				method = "trigger.create"			
+				params = @{
+					description = $TriggerDescription
+					expression = $TriggerExpression
+					priority = $priority					
+					status = $status
+					dependencies = @($depnds)
+
+				}
+				
+				jsonrpc = $jsonrpc
+				id = $id
+				auth = $session
+			}	
+		}
+		
+		$BodyJSON = ConvertTo-Json $Body -Depth 10
 		write-verbose $BodyJSON
 		
 		$a = Invoke-RestMethod "$URL/api_jsonrpc.php" -ContentType "application/json" -Body $BodyJSON -Method Post
